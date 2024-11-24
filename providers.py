@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 from typing import Dict, Any, List, Optional
 from config import PROVIDERS, TORRENT_PROVIDERS
-import pornhub
+from pornhub_api import PornHub
 from hqporner_api import Client, Quality
 import logging
 
@@ -284,7 +284,7 @@ class InstagramProvider(BaseProvider):
 
 class NSFWProvider:
     def __init__(self):
-        self.ph = pornhub.PornHub()
+        self.ph = PornHub()
         self.hq = Client()
         
     async def search_pornhub(self, query: str, limit: int = 10) -> List[Dict]:
