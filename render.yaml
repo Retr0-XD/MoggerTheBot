@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: mogger-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    autoDeploy: true
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: ALLOWED_USERS
+        sync: false
+      - key: ADMIN_ID
+        sync: false
