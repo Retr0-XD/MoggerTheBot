@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 from typing import Dict, Any, List, Optional
 from config import PROVIDERS, TORRENT_PROVIDERS
-from pornhub_api import PornHub
+from pornhub_api.api import PornhubApi
 from hqporner_api import Client, Quality
 import logging
 
@@ -284,25 +284,25 @@ class InstagramProvider(BaseProvider):
 
 class NSFWProvider:
     def __init__(self):
-        self.ph = PornHub()
+        self.ph = PornhubApi()
         self.hq = Client()
         
     async def search_pornhub(self, query: str, limit: int = 10) -> List[Dict]:
         """Search for videos on PornHub"""
         try:
-            # Use the search_videos method instead of search
-            results = self.ph.search_videos(query)
-            videos = []
+            results = []
+            data = self.ph.search.search(query, ordering="mostviewed", period="weekly")
             
-            for video in results[:limit]:
-                videos.append({
+            for video in data.videos[:limit]:
+                results.append({
                     'title': video.title,
                     'url': video.url,
                     'duration': video.duration,
-                    'views': getattr(video, 'views', 'N/A'),
-                    'rating': getattr(video, 'rating', 'N/A')
+                    'views': video.views,
+                    'rating': video.rating,
+                    'thumbnail': video.default_thumb
                 })
-            return videos
+            return results
         except Exception as e:
             logging.error(f"Error searching PornHub: {str(e)}")
             return []
@@ -336,7 +336,7 @@ class NSFWProvider:
         """Get list of popular PornHub stars"""
         try:
             # Using search_stars instead of direct stars access
-            stars = self.ph.search_stars()[:20]  # Limit to top 20
+            stars = self.ph.search.search_stars()[:20]  # Limit to top 20
             return [{
                 'name': star.name,
                 'url': star.url,
