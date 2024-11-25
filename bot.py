@@ -7,6 +7,8 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from providers import TorrentProvider, NSFWProvider, TeraBoxProvider, InstagramProvider
 from config import TELEGRAM_TOKEN, NSFW_WHITELIST, ADMIN_ID
 from access_tracker import AccessTracker
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Configure logging
 logging.basicConfig(
@@ -16,6 +18,22 @@ logging.basicConfig(
 
 if not TELEGRAM_TOKEN:
     raise ValueError("TELEGRAM_TOKEN not found in environment variables!")
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b"Bot is running")
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def run_health_server():
+    port = int(os.environ.get('PORT', 10000))
+    server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
+    server.serve_forever()
 
 class MediaBot:
     def __init__(self):
@@ -597,8 +615,13 @@ class MediaBot:
             await update.message.reply_text(f"Error processing your request: {str(e)}")
 
     def run(self):
-        app = self.setup()
-        app.run_polling()
+        # Start health check server in a separate thread
+        health_thread = threading.Thread(target=run_health_server, daemon=True)
+        health_thread.start()
+        
+        # Start the bot
+        application = self.setup()
+        application.run_polling()
 
 if __name__ == '__main__':
     bot = MediaBot()
